@@ -10,4 +10,5 @@ app_name = 'projects'
 
 urlpatterns = [
     path('list/', project_views.list, name='list'),
+    path('create-project/', project_views.create_project, name='create_project'),
 ]

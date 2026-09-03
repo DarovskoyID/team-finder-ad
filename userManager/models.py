@@ -1,8 +1,8 @@
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager, UserManager
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 
 
-class User(BaseUserManager):
+class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
             print("email is required")
@@ -22,8 +22,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True, null=False, blank=False)
     name = models.CharField(null=False, blank=False, max_length=124)
     surname = models.CharField(null=False, blank=False, max_length=124)
-    avatar = models.ImageField(upload_to='avatars/', null=False, blank=False)
-    phone = models.CharField(null=False, blank=False, max_length=12)
+    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
+    phone = models.CharField(null=True, blank=True, max_length=12)
     github = models.URLField(null=True, blank=True)
     about = models.TextField(null=True, blank=True, max_length=256)
     is_active = models.BooleanField(default=True)

@@ -29,5 +29,8 @@ def list(request):
         'query_prefix': query
     }
 
-
     return render(request, 'projects/project_list.html', data)
+
+
+def create_project(request):
+    return render(request, "projects/create-project.html")
