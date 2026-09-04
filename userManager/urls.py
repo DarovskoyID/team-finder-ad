@@ -11,8 +11,8 @@ from userManager import views as user_views
 
 app_name = 'users'
 urlpatterns = [
-    path('login/',  user_views.login, name='login'),
-    path('logout/', user_views.logout, name='logout'),
+    path('login/',  user_views.login_view, name='login'),
+    path('logout/', user_views.logout_view, name='logout'),
     path('register/', user_views.register, name='register'),
     path('<int:user_id>/', user_views.info_about_user, name='info_about_user'),
     path('change_password/', user_views.change_password, name='change_password'),

@@ -1,9 +1,9 @@
-from django.contrib import auth
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from django.core.paginator import Paginator
 from django.shortcuts import render, redirect
 
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 from userManager.forms import RegistrationForm, LoginForm, EditProfileForm
 from userManager.models import User
 
@@ -19,7 +19,7 @@ def login_view(request):
             user = authenticate(request, username=email, password=password)
 
             if user is not None:
-                auth.login(request, user)
+                login(request, user)
                 return redirect('/projects/list/')
             else:
                 form.add_error(None, "Невереный email или пароль")
@@ -29,8 +29,10 @@ def login_view(request):
     return render(request, "users/login.html", data)
 
 
-def logout(request):
-    pass
+def logout_view(request):
+    logout(request)
+    return redirect('/projects/list/')
+
 
 def register(request):
     if request.method == "POST":
@@ -52,7 +54,7 @@ def register(request):
                 else:
 
                     user = User.objects.create_user(email=email, password=password, name=name, surname=surname)
-                    auth.login(request, user)
+                    login(request, user)
                     return redirect('/projects/list/')
     else:
         form = RegistrationForm()
@@ -87,4 +89,13 @@ def change_password(request):
     return render(request, "users/change_password.html")
 
 def participants(request):
-    return render(request, "users/participants.html")
+    participants = User.objects.all()
+
+    paginator = Paginator(participants, 12)
+    page_number = request.GET.get('page')
+
+    page_obj = paginator.get_page(page_number)
+
+    data = {'page_obj': page_obj}
+
+    return render(request, "users/participants.html", data)
