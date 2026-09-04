@@ -63,7 +63,8 @@ def register(request):
     return render(request, "users/register.html", data)
 
 def info_about_user(request, user_id):
-    return render(request, "users/user-details.html")
+    data = {'user' : User.objects.get(pk=user_id),}
+    return render(request, "users/user-details.html", data)
 
 def edit_profile(request):
     form = EditProfileForm(request.POST, request.FILES)
@@ -90,6 +91,9 @@ def change_password(request):
 
 def participants(request):
     participants = User.objects.all()
+
+    if (request.user.is_authenticated):
+        participants = participants.filter(is_active=True).exclude(email=request.user.email)
 
     paginator = Paginator(participants, 12)
     page_number = request.GET.get('page')
