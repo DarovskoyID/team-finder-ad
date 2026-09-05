@@ -38,7 +38,7 @@ def list_view(request):
 
     data = {
         'page_obj': page_obj,
-        'all_skills': Skill.objects.values_list('name', flat=True).distinct(),
+        'all_skills': Skill.objects.values_list('name', flat=True).order_by('name').distinct(),
         'active_skill': active_skill,
         'query_prefix': query,
         'projects': True,
