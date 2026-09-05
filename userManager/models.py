@@ -5,7 +5,7 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseU
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
-            print("email is required")
+            raise ValueError("email is required")
         else:
             email = self.normalize_email(email)
             user = self.model(email=email, **extra_fields)
@@ -14,6 +14,7 @@ class UserManager(BaseUserManager):
             return user
 
     def create_superuser(self, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_superuser', True)
         extra_fields.setdefault('is_staff', True)
         return self.create_user(email, password, **extra_fields)
 
@@ -28,12 +29,12 @@ class User(AbstractBaseUser, PermissionsMixin):
     about = models.TextField(null=True, blank=True, max_length=256)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-    owned_projects = models.ManyToManyField('projectManager.Project', related_name='owned_projects')
+    date_joined = models.DateTimeField(auto_now_add=True)
 
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['name', 'surname', 'phone', 'avatar']
+    REQUIRED_FIELDS = ['name', 'surname']
 
     def __str__(self):
         return self.email

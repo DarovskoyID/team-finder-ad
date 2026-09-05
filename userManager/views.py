@@ -1,14 +1,13 @@
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from userManager.forms import RegistrationForm, LoginForm, EditProfileForm, ChangePasswordForm
 from userManager.models import User
 
 
-# Create your views here.
 def login_view(request):
     if request.method == "POST":
         form = LoginForm(request.POST)
@@ -53,9 +52,8 @@ def register(request):
                     form.add_error('password', error)
                 else:
 
-                    user = User.objects.create_user(email=email, password=password, name=name, surname=surname)
-                    login(request, user)
-                    return redirect('/projects/list/')
+                    User.objects.create_user(email=email, password=password, name=name, surname=surname)
+                    return redirect('/users/login/')
     else:
         form = RegistrationForm()
 
@@ -63,7 +61,8 @@ def register(request):
     return render(request, "users/register.html", data)
 
 def info_about_user(request, user_id):
-    data = {'user' : User.objects.get(pk=user_id),}
+    user = get_object_or_404(User, id=user_id)
+    data = {'user' : user,}
     return render(request, "users/user-details.html", data)
 
 def edit_profile(request):
@@ -75,7 +74,8 @@ def edit_profile(request):
             if form.is_valid():
                 user.name = form.cleaned_data['name']
                 user.surname = form.cleaned_data['surname']
-                user.avatar = form.cleaned_data['avatar']
+                if form.cleaned_data['avatar']:
+                    user.avatar = form.cleaned_data['avatar']
                 user.about = form.cleaned_data['about']
                 user.phone = form.cleaned_data['phone']
                 user.github = form.cleaned_data['github']
@@ -118,6 +118,7 @@ def change_password(request):
                             request.user.set_password(new_password1)
                             request.user.save()
                             update_session_auth_hash(request, request.user)
+                            return redirect('/projects/list/')
                     else:
                         form.add_error('new_password2', 'Пароль не совпадает')
                 else:
@@ -130,7 +131,7 @@ def change_password(request):
         return redirect('/users/login/')
 
 def participants(request):
-    participants = User.objects.all().filter(is_active=True)
+    participants = User.objects.all().filter(is_active=True).order_by('-date_joined')
 
     if (request.user.is_authenticated):
         participants = participants.exclude(email=request.user.email)
