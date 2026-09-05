@@ -1,4 +1,4 @@
 status = {
-    "open":"Open",
-    "closed":"Closed",
+    "open": "Open",
+    "closed": "Closed",
 }

@@ -1,14 +1,17 @@
 from django import forms
 
+
 class LoginForm(forms.Form):
     email = forms.EmailField(label='Email')
-    password = forms.CharField(label='Пароль')
+    password = forms.CharField(label='Пароль', widget=forms.PasswordInput)
+
 
 class RegistrationForm(forms.Form):
     email = forms.EmailField(label='Email')
-    password = forms.CharField(label='Пароль')
+    password = forms.CharField(label='Пароль', widget=forms.PasswordInput)
     name = forms.CharField(label="Имя", max_length=124)
     surname = forms.CharField(label="Фамилия", max_length=124)
+
 
 class EditProfileForm(forms.Form):
     avatar = forms.ImageField(required=False)
@@ -19,17 +22,13 @@ class EditProfileForm(forms.Form):
                             required=False,
                             widget=forms.Textarea(attrs={'rows': 5, 'max_length': 256}))
     phone = forms.CharField(label="Телефон", max_length=12, required=False)
-    github = forms.URLField(label="GitHub", required=False)
+    github_url = forms.URLField(label="GitHub", required=False)
+
 
 class ChangePasswordForm(forms.Form):
-    current_password = forms.CharField(label="Текущий пароль")
-    new_password1 = forms.CharField(label="Новый пароль")
-    new_password2 = forms.CharField(label="Подтвердите новый пароль")
-
-
-
-
-
-
-
-
+    current_password = forms.CharField(
+        label="Текущий пароль", widget=forms.PasswordInput)
+    new_password1 = forms.CharField(
+        label="Новый пароль", widget=forms.PasswordInput)
+    new_password2 = forms.CharField(
+        label="Подтвердите новый пароль", widget=forms.PasswordInput)

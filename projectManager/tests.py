@@ -6,16 +6,20 @@ from django.urls import reverse
 from projectManager.models import Project, Skill
 from userManager.models import User
 
+ownmail = 'test+1@test.ru'
+othermail = 'test@test.ru'
+passwd = '1234'
+
 
 class ProjectViewsTest(TestCase):
     def setUp(self):
         self.owner = User.objects.create_user(
-            email='test+1@test.ru', password='1234',
+            email=ownmail, password=passwd,
             name='Иван', surname='Иванов',
         )
 
         self.other = User.objects.create_user(
-            email='test@test.ru', password='1234',
+            email=othermail, password=passwd,
             name='Пётр', surname='Петров',
         )
 
@@ -33,19 +37,22 @@ class ProjectViewsTest(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_filter_by_existing_skill(self):
-        response = self.client.get(reverse('projects:list'), {'skill': 'Python'})
+        response = self.client.get(
+            reverse('projects:list'), {'skill': 'Python'})
 
         self.assertEqual(response.status_code, 200)
         self.assertIn(self.project, response.context['page_obj'])
 
     def test_filter_by_missing_skill_returns_empty(self):
-        response = self.client.get(reverse('projects:list'), {'skill': 'НетТакого'})
+        response = self.client.get(reverse('projects:list'), {
+                                   'skill': 'НетТакого'})
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['page_obj']), 0)
 
     def test_detail_404_for_missing_project(self):
-        response = self.client.get(reverse('projects:project_detail', args=[999999]))
+        response = self.client.get(
+            reverse('projects:project_detail', args=[999999]))
 
         self.assertEqual(response.status_code, 404)
 
@@ -55,7 +62,7 @@ class ProjectViewsTest(TestCase):
         self.assertEqual(response.status_code, 302)
 
     def test_owner_can_create_project(self):
-        self.client.login(username='test+1@test.ru', password='1234')
+        self.client.login(username=ownmail, password=passwd)
 
         response = self.client.post(reverse('projects:create_project'), {
             'name': 'new project',
@@ -69,7 +76,7 @@ class ProjectViewsTest(TestCase):
         self.assertIn(self.owner, new_project.participants.all())
 
     def test_stranger_cannot_edit_project(self):
-        self.client.login(username='test@test.ru', password='1234')
+        self.client.login(username=othermail, password=passwd)
         response = self.client.post(
             reverse('projects:project_edit', args=[self.project.id]),
             {'name': 'crack', 'description': 'x',
@@ -80,25 +87,28 @@ class ProjectViewsTest(TestCase):
         self.assertEqual(self.project.name, 'Proj')
 
     def test_toggle_participate(self):
-        self.client.login(username='test@test.ru', password='1234')
-        url = reverse('projects:toggle_participate', args=[self.project.id])
+        self.client.login(username=othermail, password=passwd)
+        url = reverse('projects:toggle_participate',
+                      args=[self.project.id])
 
         response = self.client.post(url)
-        self.assertJSONEqual(response.content, {'status': 'ok', 'participant': True})
+        self.assertJSONEqual(response.content, {
+                             'status': 'ok', 'participant': True})
         self.assertIn(self.other, self.project.participants.all())
 
         response = self.client.post(url)
-        self.assertJSONEqual(response.content, {'status': 'ok', 'participant': False})
+        self.assertJSONEqual(response.content, {
+                             'status': 'ok', 'participant': False})
 
     def test_toggle_participate_rejects_get(self):
-        self.client.login(username='test+1@test.ru', password='1234')
+        self.client.login(username=othermail, password=passwd)
         response = self.client.get(
             reverse('projects:toggle_participate', args=[self.project.id])
         )
         self.assertEqual(response.status_code, 405)
 
     def test_owner_can_complete_project(self):
-        self.client.login(username='test@test.ru', password='1234')
+        self.client.login(username=ownmail, password=passwd)
         response = self.client.post(
             reverse('projects:project_complete', args=[self.project.id])
         )
@@ -107,7 +117,7 @@ class ProjectViewsTest(TestCase):
         self.assertEqual(self.project.status, 'closed')
 
     def test_stranger_cannot_add_skill(self):
-        self.client.login(username='test+1@test.ru', password='1234')
+        self.client.login(username=othermail, password=passwd)
         response = self.client.post(
             reverse('projects:skill_add', args=[self.project.id]),
             data=json.dumps({'name': 'Django'}),
@@ -116,7 +126,7 @@ class ProjectViewsTest(TestCase):
         self.assertEqual(response.status_code, 403)
 
     def test_owner_can_add_new_skill(self):
-        self.client.login(username='test@test.ru', password='1234')
+        self.client.login(username=ownmail, password=passwd)
         response = self.client.post(
             reverse('projects:skill_add', args=[self.project.id]),
             data=json.dumps({'name': 'Django'}),

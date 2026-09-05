@@ -1,3 +1,5 @@
+import email
+
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
@@ -24,7 +26,7 @@ def login_view(request):
                 form.add_error(None, "Невереный email или пароль")
     else:
         form = LoginForm()
-    data = {'form' : form}
+    data = {'form': form}
     return render(request, "users/login.html", data)
 
 
@@ -52,7 +54,8 @@ def register(request):
                     form.add_error('password', error)
                 else:
 
-                    User.objects.create_user(email=email, password=password, name=name, surname=surname)
+                    User.objects.create_user(
+                        email=email, password=password, name=name, surname=surname)
                     return redirect('/users/login/')
     else:
         form = RegistrationForm()
@@ -60,10 +63,12 @@ def register(request):
     data = {'form': form}
     return render(request, "users/register.html", data)
 
+
 def info_about_user(request, user_id):
     user = get_object_or_404(User, id=user_id)
-    data = {'user' : user,}
+    data = {'user': user, }
     return render(request, "users/user-details.html", data)
+
 
 def edit_profile(request):
 
@@ -78,7 +83,7 @@ def edit_profile(request):
                     user.avatar = form.cleaned_data['avatar']
                 user.about = form.cleaned_data['about']
                 user.phone = form.cleaned_data['phone']
-                user.github = form.cleaned_data['github']
+                user.github_url = form.cleaned_data['github_url']
 
                 user.save()
 
@@ -91,7 +96,7 @@ def edit_profile(request):
                 'avatar': user.avatar,
                 'about': user.about,
                 'phone': user.phone,
-                'github': user.github,
+                'github_url': user.github_url,
 
             })
 
@@ -99,6 +104,7 @@ def edit_profile(request):
         return render(request, "users/edit_profile.html", data)
     else:
         return redirect('/projects/list/')
+
 
 def change_password(request):
     if request.user.is_authenticated:
@@ -120,21 +126,21 @@ def change_password(request):
                             update_session_auth_hash(request, request.user)
                             return redirect('/projects/list/')
                     else:
-                        form.add_error('new_password2', 'Пароль не совпадает')
+                        form.add_error('new_password2',
+                                       'Пароль не совпадает')
                 else:
                     form.add_error('current_password', 'Это не ваш пароль')
         else:
             form = ChangePasswordForm()
-        data = {'form' : form}
+        data = {'form': form}
         return render(request, "users/change_password.html", data)
     else:
         return redirect('/users/login/')
 
-def participants(request):
-    participants = User.objects.all().filter(is_active=True).order_by('-date_joined')
 
-    if (request.user.is_authenticated):
-        participants = participants.exclude(email=request.user.email)
+def participants(request):
+    participants = User.objects.all().filter(
+        is_active=True).order_by('-date_joined')
 
     paginator = Paginator(participants, 12)
     page_number = request.GET.get('page')

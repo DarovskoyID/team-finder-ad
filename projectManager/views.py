@@ -20,7 +20,8 @@ def list_view(request):
         skill = Skill.objects.filter(name=query).first()
         if skill:
             active_skill = skill.name
-            projects = Project.objects.all().filter(skills=skill.id).order_by('-created_at')
+            projects = Project.objects.all().filter(
+                skills=skill.id).order_by('-created_at')
         else:
             projects = Project.objects.none()
     else:
@@ -33,14 +34,14 @@ def list_view(request):
 
     query = ''
     if active_skill:
-        query = urlencode({'skill' : active_skill}) + '&'
-
+        query = urlencode({'skill': active_skill}) + '&'
 
     data = {
-        'page_obj' : page_obj,
-        'all_skills' : Skill.objects.values_list('name', flat=True).distinct(),
-        'active_skill' : active_skill,
-        'query_prefix': query
+        'page_obj': page_obj,
+        'all_skills': Skill.objects.values_list('name', flat=True).distinct(),
+        'active_skill': active_skill,
+        'query_prefix': query,
+        'projects': True,
     }
 
     return render(request, 'projects/project_list.html', data)
@@ -91,7 +92,6 @@ def project_edit(request, project_id):
         if project.owner.id != request.user.id:
             return redirect('/projects/list/')
 
-
         if request.method == "POST":
             form = ProjectCreateForm(request.POST)
             if form.is_valid():
@@ -116,10 +116,11 @@ def project_edit(request, project_id):
         data = {
             'form': form,
             'is_edit': True,
-                }
+        }
 
         return render(request, "projects/create-project.html", data)
     return redirect('/users/login/')
+
 
 @require_POST
 @login_required
@@ -132,11 +133,14 @@ def project_complete(request, project_id):
         return JsonResponse({'error': 'You are not have permission to complete this project.'}, status=403)
     return JsonResponse({'status': 'ok'})
 
+
 @require_POST
 @login_required
 def toggle_participate(request, project_id):
     project = get_object_or_404(Project, id=project_id)
 
+    if project.status == "closed":
+        return JsonResponse({'status': 'project closed'}, status=400)
 
     if request.user not in project.participants.all():
         project.participants.add(request.user)
@@ -155,9 +159,11 @@ def skills_search(request):
     if not query:
         return JsonResponse({'skills': []})
 
-    skills = Skill.objects.filter(name__icontains=query).values('id', 'name')[:10]
+    skills = Skill.objects.filter(
+        name__icontains=query).values('id', 'name')[:10]
 
     return JsonResponse(list(skills), safe=False)
+
 
 @require_POST
 @login_required
@@ -169,23 +175,21 @@ def skill_add(request, project_id):
 
     try:
         data = json.loads(request.body)
+        skill_name = data.get('name')
+        skill_id = data.get('skill_id')
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
 
-    skill_name = data.get('name')
-    skill_id = data.get('skill_id')
-
-    if skill_name:
-        skill = Skill.objects.get_or_create(name=skill_name)
+    if skill_name and len(skill_name) <= 128:
+        skill, _ = Skill.objects.get_or_create(name=skill_name)
     elif skill_id:
         skill = get_object_or_404(Skill, id=skill_id)
     else:
-        return JsonResponse({'error' : 'Empty name'}, status=400)
-
+        return JsonResponse({'error': 'Empty name'}, status=400)
 
     project.skills.add(skill)
 
-    return JsonResponse({'status': 'ok','id' : skill.id, 'name': skill.name})
+    return JsonResponse({'status': 'ok', 'id': skill.id, 'name': skill.name})
 
 
 @require_POST
