@@ -23,6 +23,10 @@ class EditProfileForm(forms.Form):
     phone = forms.CharField(label="Телефон", max_length=12, required=False)
     github = forms.URLField(label="GitHub", required=False)
 
+class ChangePasswordForm(forms.Form):
+    current_password = forms.CharField(label="Текущий пароль")
+    new_password1 = forms.CharField(label="Новый пароль")
+    new_password2 = forms.CharField(label="Подтвердите новый пароль")
 
 
 

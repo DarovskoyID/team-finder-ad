@@ -3,8 +3,8 @@ from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.shortcuts import render, redirect
 
-from django.contrib.auth import authenticate, login, logout
-from userManager.forms import RegistrationForm, LoginForm, EditProfileForm
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
+from userManager.forms import RegistrationForm, LoginForm, EditProfileForm, ChangePasswordForm
 from userManager.models import User
 
 
@@ -67,11 +67,12 @@ def info_about_user(request, user_id):
     return render(request, "users/user-details.html", data)
 
 def edit_profile(request):
-    form = EditProfileForm(request.POST, request.FILES)
+
     if request.user.is_authenticated:
+        user = request.user
         if request.method == "POST":
+            form = EditProfileForm(request.POST, request.FILES)
             if form.is_valid():
-                user = request.user
                 user.name = form.cleaned_data['name']
                 user.surname = form.cleaned_data['surname']
                 user.avatar = form.cleaned_data['avatar']
@@ -80,20 +81,59 @@ def edit_profile(request):
                 user.github = form.cleaned_data['github']
 
                 user.save()
+
+                return redirect('/users/'+str(user.id))
+
+        elif request.method == "GET":
+            form = EditProfileForm(initial={
+                'name': user.name,
+                'surname': user.surname,
+                'avatar': user.avatar,
+                'about': user.about,
+                'phone': user.phone,
+                'github': user.github,
+
+            })
+
+        data = {'form': form}
+        return render(request, "users/edit_profile.html", data)
     else:
         return redirect('/projects/list/')
 
-    data = {'form' : form}
-    return render(request, "users/edit_profile.html", data)
-
 def change_password(request):
-    return render(request, "users/change_password.html")
+    if request.user.is_authenticated:
+        if request.method == "POST":
+            form = ChangePasswordForm(data=request.POST)
+            if form.is_valid():
+                current_password = form.cleaned_data['current_password']
+                new_password1 = form.cleaned_data['new_password1']
+                new_password2 = form.cleaned_data['new_password2']
+                if request.user.check_password(current_password):
+                    if new_password1 == new_password2:
+                        try:
+                            validate_password(new_password1)
+                        except ValidationError as error:
+                            form.add_error('new_password1', error)
+                        else:
+                            request.user.set_password(new_password1)
+                            request.user.save()
+                            update_session_auth_hash(request, request.user)
+                    else:
+                        form.add_error('new_password2', 'Пароль не совпадает')
+                else:
+                    form.add_error('current_password', 'Это не ваш пароль')
+        else:
+            form = ChangePasswordForm()
+        data = {'form' : form}
+        return render(request, "users/change_password.html", data)
+    else:
+        return redirect('/users/login/')
 
 def participants(request):
-    participants = User.objects.all()
+    participants = User.objects.all().filter(is_active=True)
 
     if (request.user.is_authenticated):
-        participants = participants.filter(is_active=True).exclude(email=request.user.email)
+        participants = participants.exclude(email=request.user.email)
 
     paginator = Paginator(participants, 12)
     page_number = request.GET.get('page')

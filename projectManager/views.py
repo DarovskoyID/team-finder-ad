@@ -1,10 +1,11 @@
-from os import name
 
 from django.core.paginator import Paginator
+from django.http import JsonResponse
 from django.shortcuts import render, redirect
 
 from projectManager.forms import ProjectCreateForm
 from projectManager.models import Project, Skill
+from projectManager.status import status
 from userManager.views import participants
 
 
@@ -39,22 +40,27 @@ def list(request):
 def create_project(request):
 
     if request.user.is_authenticated:
-        form = ProjectCreateForm(request.POST)
-        user = request.user
-        if form.is_valid():
-            name = form.cleaned_data['name']
-            description = form.cleaned_data['description']
-            github_url = form.cleaned_data['github_url']
-            status = form.cleaned_data['status']
+        if request.method == "POST":
+            form = ProjectCreateForm(request.POST)
+            user = request.user
+            if form.is_valid():
+                name = form.cleaned_data['name']
+                description = form.cleaned_data['description']
+                github_url = form.cleaned_data['github_url']
+                status = form.cleaned_data['status']
 
-            your_project = Project.objects.create(name=name,
-                                                  description=description,
-                                                  owner=user,
-                                                  github_url=github_url,
-                                                  status=status)
-            your_project.participants.add(user)
+                your_project = Project.objects.create(name=name,
+                                                      description=description,
+                                                      owner=user,
+                                                      github_url=github_url,
+                                                      status=status)
+                your_project.participants.add(user)
+                user.owned_projects.add(your_project)
+                user.save()
 
-            return redirect('/projects/' + str(your_project.id))
+                return redirect('/projects/' + str(your_project.id))
+        else:
+            form = ProjectCreateForm()
 
         data = {'form': form}
 
@@ -74,23 +80,51 @@ def project_detail(request, project_id):
 def project_edit(request, project_id):
     if request.user.is_authenticated:
         project = Project.objects.get(id=project_id)
+
         if project.owner.email != request.user.email:
             return redirect('/projects/list/')
-        form = ProjectCreateForm(request.POST)
-        if form.is_valid():
-            name = form.cleaned_data['name']
-            description = form.cleaned_data['description']
-            github_url = form.cleaned_data['github_url']
-            status = form.cleaned_data['status']
 
-            project.name = name
-            project.description = description
-            project.github_url = github_url
-            project.status = status
-            project.save()
-            return redirect('/projects/'+str(project.id))
 
-        data = {'form': form}
+        if request.method == "POST":
+            form = ProjectCreateForm(request.POST)
+            if form.is_valid():
+                name = form.cleaned_data['name']
+                description = form.cleaned_data['description']
+                github_url = form.cleaned_data['github_url']
+                status = form.cleaned_data['status']
+
+                project.name = name
+                project.description = description
+                project.github_url = github_url
+                project.status = status
+                project.save()
+                return redirect('/projects/'+str(project.id))
+        elif request.method == "GET":
+            form = ProjectCreateForm(initial={
+                'name': project.name,
+                'description': project.description,
+                'github_url': project.github_url,
+                'status': project.status
+            })
+        data = {
+            'form': form,
+            'is_edit': True,
+                }
 
         return render(request, "projects/create-project.html", data)
     return redirect('/users/login/')
+
+
+def project_complete(request, project_id):
+    project = Project.objects.get(id=project_id)
+
+    if request.method == "POST":
+        if request.user.is_authenticated:
+            if request.user.id == project.owner.id:
+                project.status = "closed"
+                project.save()
+            else:
+                return JsonResponse({'error': 'You are not have permission to complete this project.'})
+        else:
+            return JsonResponse({'error': 'You are not logged in'}, status=403)
+    return JsonResponse({'status': 'ok'})

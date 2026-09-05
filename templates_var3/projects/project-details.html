@@ -62,9 +62,12 @@
                     Редактировать
                 </a>
                 {% if project.status == "open" %}
-                    <button class="black-button" id="complete-project-btn" data-id="{{ project.id }}">
-                        Завершить проект
-                    </button>
+                    <form method="post">
+                        {% csrf_token %}
+                        <button class="black-button" id="complete-project-btn" data-id="{{ project.id }}">
+                            Завершить проект
+                        </button>
+                    </form>
                 {% endif %}
             {% else %}
                 {% if user.is_authenticated %}
