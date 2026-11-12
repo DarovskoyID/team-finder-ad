@@ -15,7 +15,8 @@ class Migration(migrations.Migration):
             model_name="user",
             name="owned_projects",
             field=models.ManyToManyField(
-                related_name="owned_projects", to="projectManager.project"
+                related_name="owned_projects",
+                to="projectManager.project",
             ),
         ),
     ]

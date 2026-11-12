@@ -46,7 +46,7 @@
                 {% if project.github_url %}
                 <p class="project-link">
                     {% include 'includes/svg/github.html' %}
-                    <a href="{{ project.github_url }}" target="_blank">Репозиторий на GitHub</a>
+                    <a href="{{ project.github_url }}" target="_blank" rel="noopener noreferrer">Репозиторий на GitHub</a>
                 </p>
                 {% endif %}
         </div>
@@ -70,7 +70,7 @@
                     </form>
                 {% endif %}
             {% else %}
-                {% if user.is_authenticated %}
+                {% if user.is_authenticated and project.status == "open" %}
                     <button id="participate-btn" class="black-button"
                             data-project="{{ project.id }}"
                             data-user-id="{{ request.user.id }}"

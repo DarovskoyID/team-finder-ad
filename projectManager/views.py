@@ -1,6 +1,7 @@
 import json
 
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
@@ -12,126 +13,114 @@ from projectManager.models import Project, Skill
 
 
 def list_view(request):
-    query = request.GET.get('skill', '').strip()
+    query = request.GET.get("skill", "").strip()
 
-    active_skill = ''
-
+    active_skill = query
+    projects = (
+        Project.objects.select_related("owner")
+        .prefetch_related("skills", "participants")
+        .order_by("-created_at", "-pk")
+    )
     if query:
         skill = Skill.objects.filter(name=query).first()
         if skill:
             active_skill = skill.name
-            projects = Project.objects.all().filter(
-                skills=skill.id).order_by('-created_at')
+            projects = projects.filter(skills=skill)
         else:
-            projects = Project.objects.none()
-    else:
-        projects = Project.objects.all().order_by('-created_at')
+            projects = projects.none()
 
     paginator = Paginator(projects, 12)
-    page_number = request.GET.get('page')
+    page_number = request.GET.get("page")
 
     page_obj = paginator.get_page(page_number)
 
-    query = ''
+    query = ""
     if active_skill:
-        query = urlencode({'skill': active_skill}) + '&'
+        query = urlencode({"skill": active_skill}) + "&"
 
     data = {
-        'page_obj': page_obj,
-        'all_skills': Skill.objects.values_list('name', flat=True).order_by('name').distinct(),
-        'active_skill': active_skill,
-        'query_prefix': query,
-        'projects': True,
+        "page_obj": page_obj,
+        "all_skills": Skill.objects.values_list("name", flat=True)
+        .order_by("name")
+        .distinct(),
+        "active_skill": active_skill,
+        "query_prefix": query,
+        "projects": page_obj,
     }
 
-    return render(request, 'projects/project_list.html', data)
+    return render(request, "projects/project_list.html", data)
 
 
+def _project_form(request, project=None):
+    form = ProjectCreateForm(
+        request.POST if request.method == "POST" else None,
+        instance=project,
+    )
+    if request.method == "POST" and form.is_valid():
+        saved_project = form.save(commit=False)
+        if project is None:
+            saved_project.owner = request.user
+        saved_project.save()
+        if project is None:
+            saved_project.participants.add(request.user)
+        return redirect(
+            "projects:project_detail",
+            project_id=saved_project.pk,
+        )
+    return render(
+        request,
+        "projects/create-project.html",
+        {
+            "form": form,
+            "is_edit": project is not None,
+        },
+    )
+
+
+@login_required
 def create_project(request):
-
-    if request.user.is_authenticated:
-        if request.method == "POST":
-            form = ProjectCreateForm(request.POST)
-            user = request.user
-            if form.is_valid():
-                name = form.cleaned_data['name']
-                description = form.cleaned_data['description']
-                github_url = form.cleaned_data['github_url']
-                status = form.cleaned_data['status']
-
-                your_project = Project.objects.create(name=name,
-                                                      description=description,
-                                                      owner=user,
-                                                      github_url=github_url,
-                                                      status=status)
-                your_project.participants.add(user)
-
-                return redirect('/projects/' + str(your_project.id))
-        else:
-            form = ProjectCreateForm()
-
-        data = {'form': form}
-
-        return render(request, "projects/create-project.html", data)
-
-    return redirect('/users/login/')
+    return _project_form(request)
 
 
 def project_detail(request, project_id):
 
     project = get_object_or_404(Project, id=project_id)
-    data = {'project': project}
+    data = {"project": project}
 
     return render(request, "projects/project-details.html", data)
 
 
+@login_required
 def project_edit(request, project_id):
-    if request.user.is_authenticated:
-        project = get_object_or_404(Project, id=project_id)
+    project = get_object_or_404(Project, pk=project_id)
+    if project.owner_id != request.user.pk:
+        return redirect("projects:list")
+    return _project_form(request, project)
 
-        if project.owner.id != request.user.id:
-            return redirect('/projects/list/')
 
-        if request.method == "POST":
-            form = ProjectCreateForm(request.POST)
-            if form.is_valid():
-                name = form.cleaned_data['name']
-                description = form.cleaned_data['description']
-                github_url = form.cleaned_data['github_url']
-                status = form.cleaned_data['status']
-
-                project.name = name
-                project.description = description
-                project.github_url = github_url
-                project.status = status
-                project.save()
-                return redirect('/projects/'+str(project.id))
-        elif request.method == "GET":
-            form = ProjectCreateForm(initial={
-                'name': project.name,
-                'description': project.description,
-                'github_url': project.github_url,
-                'status': project.status
-            })
-        data = {
-            'form': form,
-            'is_edit': True,
-        }
-
-        return render(request, "projects/create-project.html", data)
-    return redirect('/users/login/')
+def _owned_project(request, project_id):
+    project = get_object_or_404(Project, pk=project_id)
+    if project.owner_id != request.user.pk:
+        raise PermissionDenied
+    return project
 
 
 @require_POST
 @login_required
 def project_complete(request, project_id):
-    project = get_object_or_404(Project, id=project_id)
-    if request.user.id == project.owner.id:
-        project.status = "closed"
-        project.save()
-    else:
-        return JsonResponse({'error': 'You are not have permission to complete this project.'}, status=403)
-    return JsonResponse({'status': 'ok'})
+    project = _owned_project(request, project_id)
+    if project.status != "open":
+        return JsonResponse(
+            {"error": "Проект уже закрыт."}, status=400
+        )
+    project.status = "closed"
+    project.save(update_fields=["status"])
+    return JsonResponse(
+        {
+            "status": "ok",
+            "project_status": "closed",
+        }
+    )
 
 
 @require_POST
@@ -140,27 +129,30 @@ def toggle_participate(request, project_id):
     project = get_object_or_404(Project, id=project_id)
 
     if project.status == "closed":
-        return JsonResponse({'status': 'project closed'}, status=400)
+        return JsonResponse({"status": "project closed"}, status=400)
 
-    if request.user not in project.participants.all():
+    if not project.participants.filter(pk=request.user.pk).exists():
         project.participants.add(request.user)
-        project.save()
         is_participant = True
     else:
         project.participants.remove(request.user)
-        project.save()
         is_participant = False
-    return JsonResponse({'status': 'ok', 'participant': is_participant})
+    return JsonResponse(
+        {"status": "ok", "participant": is_participant}
+    )
 
 
 def skills_search(request):
-    query = request.GET.get('q', '').strip()
+    query = request.GET.get("q", "").strip()
 
     if not query:
-        return JsonResponse({'skills': []})
+        return JsonResponse([], safe=False)
 
-    skills = Skill.objects.filter(
-        name__icontains=query).values('id', 'name')[:10]
+    skills = (
+        Skill.objects.filter(name__istartswith=query)
+        .order_by("name")
+        .values("id", "name")[:10]
+    )
 
     return JsonResponse(list(skills), safe=False)
 
@@ -168,38 +160,59 @@ def skills_search(request):
 @require_POST
 @login_required
 def skill_add(request, project_id):
-    project = get_object_or_404(Project, id=project_id)
-
-    if project.owner != request.user:
-        return JsonResponse({'error': 'You are not have permission'}, status=403)
-
+    project = _owned_project(request, project_id)
     try:
         data = json.loads(request.body)
-        skill_name = data.get('name')
-        skill_id = data.get('skill_id')
-    except json.JSONDecodeError:
-        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    except (ValueError, UnicodeDecodeError):
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+    if not isinstance(data, dict):
+        return JsonResponse({"error": "Expected object"}, status=400)
 
-    if skill_name and len(skill_name) <= 128:
-        skill, _ = Skill.objects.get_or_create(name=skill_name)
-    elif skill_id:
-        skill = get_object_or_404(Skill, id=skill_id)
+    if ("name" in data) == ("skill_id" in data):
+        return JsonResponse(
+            {"error": "Выберите один навык."}, status=400
+        )
+    created = False
+    skill_name = data.get("name")
+    skill_id = data.get("skill_id")
+    if skill_name is not None:
+        if not isinstance(skill_name, str):
+            return JsonResponse({"error": "Invalid name"}, status=400)
+        skill_name = skill_name.strip()
+        if not 1 <= len(skill_name) <= 124:
+            return JsonResponse({"error": "Invalid name"}, status=400)
+        skill, created = Skill.objects.get_or_create(name=skill_name)
+    elif (
+        isinstance(skill_id, (int, str))
+        and not isinstance(skill_id, bool)
+        and str(skill_id).isascii()
+        and len(str(skill_id)) <= 10
+        and str(skill_id).isdigit()
+        and 0 < int(skill_id) <= 2147483647
+    ):
+        skill = get_object_or_404(Skill, pk=int(skill_id))
     else:
-        return JsonResponse({'error': 'Empty name'}, status=400)
+        return JsonResponse({"error": "Invalid skill"}, status=400)
 
+    added = not project.skills.filter(pk=skill.pk).exists()
     project.skills.add(skill)
 
-    return JsonResponse({'status': 'ok', 'id': skill.id, 'name': skill.name})
+    return JsonResponse(
+        {
+            "skill_id": skill.pk,
+            "name": skill.name,
+            "created": created,
+            "added": added,
+        }
+    )
 
 
 @require_POST
 @login_required
 def skill_remove(request, project_id, skill_id):
-    project = get_object_or_404(Project, id=project_id)
+    project = _owned_project(request, project_id)
 
-    if project.owner != request.user:
-        return JsonResponse({'error': 'You are not have permission'}, status=403)
+    skill = get_object_or_404(project.skills, pk=skill_id)
+    project.skills.remove(skill)
 
-    project.skills.remove(skill_id)
-
-    return JsonResponse({'status': 'ok'})
+    return JsonResponse({"status": "ok"})

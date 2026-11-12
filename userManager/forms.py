@@ -1,34 +1,77 @@
 from django import forms
 
+from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth.password_validation import validate_password
+
+from team_finder.validators import normalize_phone
+from userManager.models import User
+
 
 class LoginForm(forms.Form):
-    email = forms.EmailField(label='Email')
-    password = forms.CharField(label='Пароль', widget=forms.PasswordInput)
+    email = forms.EmailField(label="Email")
+    password = forms.CharField(
+        label="Пароль", widget=forms.PasswordInput
+    )
 
 
-class RegistrationForm(forms.Form):
-    email = forms.EmailField(label='Email')
-    password = forms.CharField(label='Пароль', widget=forms.PasswordInput)
-    name = forms.CharField(label="Имя", max_length=124)
-    surname = forms.CharField(label="Фамилия", max_length=124)
+class RegistrationForm(forms.ModelForm):
+    password = forms.CharField(
+        label="Пароль",
+        widget=forms.PasswordInput,
+    )
+
+    class Meta:
+        model = User
+        fields = ("name", "surname", "email", "password")
+        labels = {"name": "Имя", "surname": "Фамилия"}
+
+    def clean_email(self):
+        return User.objects.normalize_email(
+            self.cleaned_data["email"]
+        )
+
+    def clean(self):
+        data = super().clean()
+        if data.get("password"):
+            candidate = User(
+                **{
+                    key: data.get(key, "")
+                    for key in ("email", "name", "surname")
+                }
+            )
+            try:
+                validate_password(data["password"], candidate)
+            except forms.ValidationError as error:
+                self.add_error("password", error)
+        return data
+
+    def save(self):
+        return User.objects.create_user(**self.cleaned_data)
 
 
-class EditProfileForm(forms.Form):
-    avatar = forms.ImageField(required=False)
-    name = forms.CharField(label="Имя", max_length=124)
-    surname = forms.CharField(label="Фамилия", max_length=124)
-    about = forms.CharField(label="О себе, только хорошее",
-                            max_length=256,
-                            required=False,
-                            widget=forms.Textarea(attrs={'rows': 5, 'max_length': 256}))
-    phone = forms.CharField(label="Телефон", max_length=12, required=False)
-    github_url = forms.URLField(label="GitHub", required=False)
+class EditProfileForm(forms.ModelForm):
+    def clean_phone(self):
+        return normalize_phone(self.cleaned_data.get("phone"))
+
+    class Meta:
+        model = User
+        fields = (
+            "avatar",
+            "name",
+            "surname",
+            "about",
+            "phone",
+            "github_url",
+        )
+        labels = {
+            "name": "Имя",
+            "surname": "Фамилия",
+            "about": "О себе, только хорошее",
+            "phone": "Телефон",
+            "github_url": "GitHub",
+        }
+        widgets = {"about": forms.Textarea(attrs={"rows": 5})}
 
 
-class ChangePasswordForm(forms.Form):
-    current_password = forms.CharField(
-        label="Текущий пароль", widget=forms.PasswordInput)
-    new_password1 = forms.CharField(
-        label="Новый пароль", widget=forms.PasswordInput)
-    new_password2 = forms.CharField(
-        label="Подтвердите новый пароль", widget=forms.PasswordInput)
+class ChangePasswordForm(PasswordChangeForm):
+    pass

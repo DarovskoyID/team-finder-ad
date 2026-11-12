@@ -19,14 +19,16 @@ class Migration(migrations.Migration):
             model_name="project",
             name="owner",
             field=models.ForeignKey(
-                on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL
+                on_delete=django.db.models.deletion.CASCADE,
+                to=settings.AUTH_USER_MODEL,
             ),
         ),
         migrations.AddField(
             model_name="project",
             name="participants",
             field=models.ManyToManyField(
-                related_name="participated_projects", to=settings.AUTH_USER_MODEL
+                related_name="participated_projects",
+                to=settings.AUTH_USER_MODEL,
             ),
         ),
         migrations.AddField(

@@ -23,13 +23,26 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 ("name", models.CharField(max_length=200)),
-                ("description", models.TextField(blank=True, null=True)),
-                ("created_at", models.DateTimeField(auto_now_add=True)),
-                ("github_url", models.URLField(blank=True, null=True)),
+                (
+                    "description",
+                    models.TextField(blank=True, null=True),
+                ),
+                (
+                    "created_at",
+                    models.DateTimeField(auto_now_add=True),
+                ),
+                (
+                    "github_url",
+                    models.URLField(blank=True, null=True),
+                ),
                 (
                     "status",
                     models.CharField(
-                        choices=[("open", "Open"), ("closed", "Closed")], max_length=6
+                        choices=[
+                            ("open", "Open"),
+                            ("closed", "Closed"),
+                        ],
+                        max_length=6,
                     ),
                 ),
             ],

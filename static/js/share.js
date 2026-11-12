@@ -11,6 +11,11 @@ document.addEventListener("click", function (e) {
     ? window.location.origin + btn.dataset.url
     : window.location.href;
 
+  if (!navigator.clipboard) {
+    fallbackCopyTextToClipboard(url);
+    return;
+  }
+
   navigator.clipboard
     .writeText(url)
     .then(() => {

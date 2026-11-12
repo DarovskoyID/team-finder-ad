@@ -1,10 +1,18 @@
-from projectManager.status import status
 from django import forms
 
+from projectManager.models import Project
 
-class ProjectCreateForm(forms.Form):
-    name = forms.CharField(label='Название великой идеи', max_length=200)
-    description = forms.CharField(
-        label='Описание', required=False, widget=forms.Textarea(attrs={'rows': 10, 'cols': 200}))
-    github_url = forms.URLField(label='GitHub URL', required=False)
-    status = forms.ChoiceField(label="Статус проекта", choices=status)
+
+class ProjectCreateForm(forms.ModelForm):
+    class Meta:
+        model = Project
+        fields = ("name", "description", "github_url", "status")
+        labels = {
+            "name": "Название великой идеи",
+            "description": "Описание",
+            "github_url": "GitHub URL",
+            "status": "Статус проекта",
+        }
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 10}),
+        }

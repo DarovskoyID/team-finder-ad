@@ -7,16 +7,11 @@
         e.preventDefault();
         const projectId = completeBtn.dataset.id;
         if (!projectId) return;
+        const button = e.currentTarget;
+        if (button.disabled) return;
+        button.disabled = true;
 
-        fetch(`/projects/${projectId}/complete/`, {
-          method: "POST",
-          headers: {
-            "X-CSRFToken": window.getCookie ? window.getCookie("csrftoken") : "",
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({})
-        })
-        .then(response => response.json())
+        window.postJSON(`/projects/${projectId}/complete/`)
         .then(data => {
           if (data.status === "ok") {
             const statusEl = document.querySelector(".project-status-black");
@@ -31,7 +26,8 @@
         .catch(err => {
           console.error("Ошибка запроса:", err);
           if (window.toast) window.toast("Ошибка сети", { type: 'error' });
-        });
+        })
+        .finally(() => { button.disabled = false; });
       });
     }
 
@@ -47,16 +43,11 @@
       participateBtn.addEventListener("click", function(e) {
         e.preventDefault();
         if (!projectId) return;
+        const button = e.currentTarget;
+        if (button.disabled) return;
+        button.disabled = true;
 
-        fetch(`/projects/${projectId}/toggle-participate/`, {
-          method: "POST",
-          headers: {
-            "X-CSRFToken": window.getCookie ? window.getCookie("csrftoken") : "",
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({})
-        })
-        .then(resp => resp.json())
+        window.postJSON(`/projects/${projectId}/toggle-participate/`)
         .then(data => {
           if (data.status !== "ok") {
             if (window.toast) window.toast("Ошибка при изменении участия", { type: 'error' });
@@ -75,13 +66,15 @@
             a.id = `participant-${userId}`;
             a.innerHTML = `
               <div class="participant-item">
-                <img src="${userAvatar}" alt="Аватар" class="participant-avatar">
+                <img src="" alt="Аватар" class="participant-avatar">
                 <div class="participant-info">
-                  <span class="participant-name">${userName}</span>
+                  <span class="participant-name"></span>
                   <span class="participant-role">Участник</span>
                 </div>
               </div>
             `;
+            a.querySelector(".participant-name").textContent = userName;
+            a.querySelector("img").src = userAvatar;
             participantsList.appendChild(a);
 
             participantsCount.textContent = parseInt(participantsCount.textContent) + 1;
@@ -106,7 +99,8 @@
         .catch(err => {
           console.error("Ошибка запроса:", err);
           if (window.toast) window.toast("Ошибка сети", { type: 'error' });
-        });
+        })
+        .finally(() => { button.disabled = false; });
       });
     }
   });

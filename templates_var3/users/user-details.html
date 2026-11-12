@@ -33,7 +33,7 @@
                     {% endif %}
                     {% if user.github_url %}
                     <span>{% include 'includes/svg/github.html' %}
-                        <a href="{{ user.github_url }}" target="_blank">GitHub</a>
+                        <a href="{{ user.github_url }}" target="_blank" rel="noopener noreferrer">GitHub</a>
                     </span>
                     {% endif %}
                 </div>

@@ -18,7 +18,8 @@ class Migration(migrations.Migration):
             model_name="user",
             name="avatar",
             field=models.ImageField(
-                blank=True, null=True, upload_to="avatars/"),
+                blank=True, null=True, upload_to="avatars/"
+            ),
         ),
         migrations.AlterField(
             model_name="user",
@@ -28,6 +29,8 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="user",
             name="phone",
-            field=models.CharField(blank=True, max_length=12, null=True),
+            field=models.CharField(
+                blank=True, max_length=12, null=True
+            ),
         ),
     ]

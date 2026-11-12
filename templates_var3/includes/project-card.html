@@ -4,11 +4,13 @@
     <div class="project-card-header-title">
         <div class="project-card-header">
             <div class="project-owner-grid">
+                <a href="{% url 'users:info_about_user' project.owner.id %}">
                 {% if project.owner.avatar %}
                     <img src="{{ project.owner.avatar.url }}" alt="Аватар" class="avatar">
                 {% else %}
                     <img src="{% static 'images/default-avatar.png' %}" alt="Аватар по умолчанию" class="avatar">
                 {% endif %}
+                </a>
                 <div class="project-owner">
                     <a href="/users/{{ project.owner.id }}">{{ project.owner.name }} {{ project.owner.surname }}</a>
                     <small class="project-date">{{ project.created_at|date:"d.m.Y" }}</small>

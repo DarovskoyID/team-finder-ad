@@ -6,9 +6,15 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('userManager', '0002_alter_user_id'),
-        ('userManager', '0002_alter_user_managers_alter_user_avatar_alter_user_id_and_more'),
+        ("userManager", "0002_alter_user_id"),
+        (
+            "userManager",
+            (
+                "0002_alter_user_managers_alter_u"
+                "ser_avatar_alter_user_id_and_mor"
+                "e"
+            ),
+        ),
     ]
 
-    operations = [
-    ]
+    operations = []

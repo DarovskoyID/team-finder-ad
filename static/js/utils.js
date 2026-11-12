@@ -26,9 +26,8 @@
       c = document.createElement('div');
       c.id = 'tf-toast-container';
       c.style.position = 'fixed';
-      c.style.left = '50%';
-      c.style.top = '50%';
-      c.style.transform = 'translate(-50%, -50%)';
+      c.style.right = '20px';
+      c.style.top = '20px';
       c.style.display = 'flex';
       c.style.flexDirection = 'column';
       c.style.alignItems = 'center';
@@ -69,3 +68,18 @@
     }
   }
 })();
+
+window.postJSON = async function(url, payload = {}) {
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "X-CSRFToken": window.getCookie("csrftoken"),
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+  if (!response.ok || response.redirected) {
+    throw new Error("Не удалось выполнить запрос");
+  }
+  return response.json();
+};
