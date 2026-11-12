@@ -1,97 +1,72 @@
 # TeamFinder
 
-Платформа поиска команды для совместных проектов на Django 5.2.
-Реализован вариант №3: необходимые навыки проектов и фильтрация.
+Поиск команды для совместных проектов. Django 5.2, PostgreSQL 16.
+Вариант №3: навыки проектов и фильтрация по ним.
 
-## Запуск
+## Быстрый запуск
 
-Требуются Python 3.11+, Docker и Docker Compose.
+Нужны Python 3.11+ и запущенный Docker Desktop.
+В терминале из папки проекта:
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -r requirements.txt
+pip install -r requirements.txt
 cp .env_example .env
 ```
 
-В `.env` задайте секретный ключ Django и параметры PostgreSQL.
-Ключ можно получить командой:
+В Windows окружение активируется командой `.venv\Scripts\activate`.
+Если `.env` уже настроен, не заменяйте его.
+
+В `.env` замените `DJANGO_SECRET_KEY` и `POSTGRES_PASSWORD`.
+Остальные значения из примера подходят для локального запуска.
+Получить случайный ключ:
 
 ```bash
 python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
 ```
 
-Если база уже работает, укажите её параметры в `.env` и пропустите
-запуск Docker. Не создавайте второй контейнер на том же порту.
+Затем:
 
 ```bash
 docker compose up -d
 python manage.py migrate
+python manage.py seed_demo
 python manage.py runserver
 ```
 
-Открыть приложение: [localhost:8000](http://localhost:8000).
-PostgreSQL хранит данные в именованном томе `postgres_data`.
+Сайт: [localhost:8000](http://localhost:8000).
+Админка: [localhost:8000/admin/](http://localhost:8000/admin/).
 
-## Демонстрационные данные
+Если PostgreSQL уже работает, укажите его параметры в `.env`
+и пропустите `docker compose up -d`.
+Данные Docker сохраняются в томе `postgres_data`.
 
-```bash
-python manage.py seed_demo
-```
+## Тестовые аккаунты
 
-Команда создаёт 15 пользователей, по проекту для каждого, 12 навыков
-и участников проектов. Есть открытые и закрытые проекты.
-Повторный запуск не создаёт дубликаты демонстрационных записей.
+`seed_demo` создаёт 15 пользователей, 15 проектов и 12 навыков.
+Повторный запуск не создаёт дубликаты.
 
-Для удаления текущих данных TeamFinder и повторного заполнения:
+- Администратор: `admin@example.com`.
+- Пользователи: `demo1@example.com` … `demo14@example.com`.
+- Пароль для всех: `TeamFinder-demo-42!`.
+
+Полностью очистить данные TeamFinder и заполнить заново:
 
 ```bash
 python manage.py seed_demo --reset
 ```
 
-`--reset` удаляет всех пользователей, проекты, навыки, сессии и журнал
-администратора в подключённой базе. Используйте только для тестовой базы.
-
-Демонстрационные аккаунты:
-
-- Администратор: `admin@example.com`.
-- Пользователи: `demo1@example.com` … `demo14@example.com`.
-- Общий пароль: `TeamFinder-demo-42!`.
-
-Пароль для новых демонстрационных аккаунтов можно задать самостоятельно:
-
-```bash
-python manage.py seed_demo --password 'Your-local-password'
-```
-
-Админка: [localhost:8000/admin/](http://localhost:8000/admin/).
+**`--reset` удаляет текущих пользователей, проекты и навыки.**
 
 ## Проверка
 
 ```bash
-python -m pip install -r requirements-dev.txt
+pip install -r requirements-dev.txt
 python manage.py test --noinput
-python manage.py check
-python manage.py makemigrations --check --dry-run
 python -m pycodestyle projectManager userManager team_finder manage.py
 python -m black --check projectManager userManager team_finder manage.py
 ```
 
-Тесты используют отдельную временную базу PostgreSQL.
-Пользователю БД нужны права создания тестовой базы.
-Данные рабочей базы при тестировании не изменяются.
-Максимальная длина строки Python — 70 символов.
-
-## Решения по требованиям
-
-- Используются маршруты `/projects/`, как в предоставленных шаблонах.
-- После регистрации пользователь переходит на страницу входа,
-  согласно функциональному описанию задания.
-- Избранное и навыки пользователей относятся к вариантам №1 и №2.
-- Профиль поддерживает загрузку аватара и стандартную картинку.
-  Для новых пользователей создаётся PNG с первой буквой имени.
-- Телефон необязателен при регистрации и редактировании. Заполненный
-  номер проверяется, приводится к `+7XXXXXXXXXX` и должен быть уникален.
-- Ссылки на GitHub проверяются в формах и при валидации моделей.
-- Проверка сложности паролей работает также в режиме отладки.
-- `.env`, файлы пользователей и личные настройки PyCharm исключены из Git.
+Тесты создают отдельную временную PostgreSQL-базу: пользователь БД
+должен иметь право её создания. Лимит строки Python — 70 символов.
