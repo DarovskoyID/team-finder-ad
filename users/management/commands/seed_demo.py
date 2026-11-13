@@ -5,7 +5,7 @@ from django.contrib.sessions.models import Session
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from projectManager.models import Project, Skill
+from projects.models import Project, Skill
 
 
 class Command(BaseCommand):
@@ -115,7 +115,11 @@ class Command(BaseCommand):
                         "Нужны разработчики и дизайнеры. "
                         "Обсудим задачи и поможем освоиться."
                     ),
-                    "status": "closed" if index % 5 == 4 else "open",
+                    "status": (
+                        Project.Status.CLOSED
+                        if index % 5 == 4
+                        else Project.Status.OPEN
+                    ),
                     "github_url": "https://github.com/octocat",
                 },
             )

@@ -6,9 +6,11 @@
 ## Быстрый запуск
 
 Нужны Python 3.11+ и запущенный Docker Desktop.
-В терминале из папки проекта:
+В терминале:
 
 ```bash
+git clone https://github.com/DarovskoyID/team-finder-ad.git
+cd team-finder-ad
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -64,8 +66,8 @@ python manage.py seed_demo --reset
 ```bash
 pip install -r requirements-dev.txt
 python manage.py test --noinput
-python -m pycodestyle projectManager userManager team_finder manage.py
-python -m black --check projectManager userManager team_finder manage.py
+python -m pycodestyle projects users team_finder manage.py
+python -m black --check projects users team_finder manage.py
 ```
 
 Тесты создают отдельную временную PostgreSQL-базу: пользователь БД

@@ -3,8 +3,9 @@ import json
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from projectManager.models import Project, Skill
-from userManager.models import User
+from projects.forms import ProjectCreateForm
+from projects.models import Project, Skill
+from users.models import User
 
 ownmail = "test+1@test.ru"
 othermail = "test@test.ru"
@@ -114,7 +115,7 @@ class ProjectViewsTest(TestCase):
                 "status": "open",
             },
         )
-        self.assertRedirects(response, "/projects/list/")
+        self.assertRedirects(response, reverse("projects:list"))
         self.project.refresh_from_db()
         self.assertEqual(self.project.name, "Proj")
 
@@ -292,7 +293,6 @@ class ProjectViewsTest(TestCase):
         self.assertEqual(self.client.post(url).status_code, 400)
 
     def test_github_validation(self):
-        from projectManager.forms import ProjectCreateForm
 
         invalid_urls = (
             "https://example.com",

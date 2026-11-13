@@ -1,6 +1,6 @@
 from django.urls import path
 
-from userManager import views as user_views
+from users import views as user_views
 
 app_name = "users"
 urlpatterns = [

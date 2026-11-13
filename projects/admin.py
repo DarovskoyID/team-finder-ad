@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from projectManager.models import Project, Skill
+from projects.models import Project, Skill
 
 
 @admin.register(Project)

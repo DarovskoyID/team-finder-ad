@@ -11,7 +11,7 @@
         if (button.disabled) return;
         button.disabled = true;
 
-        window.postJSON(`/projects/${projectId}/complete/`)
+        window.postJSON(completeBtn.dataset.url)
         .then(data => {
           if (data.status === "ok") {
             const statusEl = document.querySelector(".project-status-black");
@@ -47,7 +47,7 @@
         if (button.disabled) return;
         button.disabled = true;
 
-        window.postJSON(`/projects/${projectId}/toggle-participate/`)
+        window.postJSON(participateBtn.dataset.url)
         .then(data => {
           if (data.status !== "ok") {
             if (window.toast) window.toast("Ошибка при изменении участия", { type: 'error' });
@@ -62,7 +62,7 @@
             if (noParticipants) noParticipants.remove();
 
             const a = document.createElement("a");
-            a.href = `/users/${userId}`;
+            a.href = participateBtn.dataset.userUrl;
             a.id = `participant-${userId}`;
             a.innerHTML = `
               <div class="participant-item">

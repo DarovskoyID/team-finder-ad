@@ -6,12 +6,12 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("", lambda request: redirect("projects/list/")),
+    path("", lambda request: redirect("projects:list")),
     path(
         "projects/",
-        include("projectManager.urls", namespace="projects"),
+        include("projects.urls", namespace="projects"),
     ),
-    path("users/", include("userManager.urls", namespace="users")),
+    path("users/", include("users.urls", namespace="users")),
 ]
 
 if settings.DEBUG:

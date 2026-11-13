@@ -1,11 +1,11 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from userManager.models import User
+from users.models import User
 
 
 @admin.register(User)
-class CustomUserAdmin(UserAdmin):
+class TeamFinderUserAdmin(UserAdmin):
     ordering = ("-date_joined",)
     list_display = (
         "email",

@@ -1,10 +1,8 @@
 from django import forms
-
-from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.password_validation import validate_password
 
-from team_finder.validators import normalize_phone
-from userManager.models import User
+from team_finder.validators import normalize_phone, validate_phone
+from users.models import User
 
 
 class LoginForm(forms.Form):
@@ -23,7 +21,6 @@ class RegistrationForm(forms.ModelForm):
     class Meta:
         model = User
         fields = ("name", "surname", "email", "password")
-        labels = {"name": "Имя", "surname": "Фамилия"}
 
     def clean_email(self):
         return User.objects.normalize_email(
@@ -51,7 +48,9 @@ class RegistrationForm(forms.ModelForm):
 
 class EditProfileForm(forms.ModelForm):
     def clean_phone(self):
-        return normalize_phone(self.cleaned_data.get("phone"))
+        phone = self.cleaned_data.get("phone")
+        validate_phone(phone)
+        return normalize_phone(phone)
 
     class Meta:
         model = User
@@ -63,15 +62,3 @@ class EditProfileForm(forms.ModelForm):
             "phone",
             "github_url",
         )
-        labels = {
-            "name": "Имя",
-            "surname": "Фамилия",
-            "about": "О себе, только хорошее",
-            "phone": "Телефон",
-            "github_url": "GitHub",
-        }
-        widgets = {"about": forms.Textarea(attrs={"rows": 5})}
-
-
-class ChangePasswordForm(PasswordChangeForm):
-    pass

@@ -1,7 +1,12 @@
+from io import StringIO
+
+from django.core.management import call_command
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from userManager.models import User
+from projects.models import Project
+from users.forms import EditProfileForm
+from users.models import User
 
 ownmail = "test+1@test.ru"
 othermail = "test@test.ru"
@@ -89,7 +94,7 @@ class AuthViewsTest(TestCase):
             },
         )
 
-        self.assertRedirects(response, "/users/login/")
+        self.assertRedirects(response, reverse("users:login"))
         self.assertTrue(User.objects.filter(email=ownmail).exists())
 
     def test_login_with_valid_credentials(self):
@@ -101,7 +106,7 @@ class AuthViewsTest(TestCase):
             },
         )
 
-        self.assertRedirects(response, "/projects/list/")
+        self.assertRedirects(response, reverse("projects:list"))
 
     def test_login_with_wrong_password(self):
         response = self.client.post(
@@ -166,7 +171,6 @@ class AuthViewsTest(TestCase):
         )
 
     def test_phone_and_github_validation(self):
-        from userManager.forms import EditProfileForm
 
         data = {"name": "Иван", "surname": "Иванов", "phone": "abc"}
         form = EditProfileForm(data, instance=self.user)
@@ -218,9 +222,6 @@ class AuthViewsTest(TestCase):
         )
 
     def test_seed_demo_is_repeatable(self):
-        from io import StringIO
-        from django.core.management import call_command
-        from projectManager.models import Project
 
         call_command("seed_demo", stdout=StringIO())
         count = User.objects.count()

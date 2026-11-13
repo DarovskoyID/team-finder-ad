@@ -4,15 +4,13 @@
     const addButton = document.getElementById("add-skill-btn");
     if (!container || !addButton) return;
 
-    const projectId = container.dataset.projectId;
-    const baseUrl = `/projects/${projectId}/skills/`;
     const wrapper = document.getElementById("skill-input-wrapper");
     const input = document.getElementById("skill-input");
     const suggestions = document.getElementById("skill-suggestions");
     let timer;
     let searchController;
     let busy = false;
-    input.maxLength = 124;
+    input.maxLength = Number(container.dataset.maxLength);
 
     function showError(error) {
       window.toast(error.message, { type: "error" });
@@ -46,7 +44,7 @@
       if (busy) return;
       busy = true;
       try {
-        const skill = await window.postJSON(baseUrl + "add/", payload);
+        const skill = await window.postJSON(container.dataset.addUrl, payload);
         appendChip(skill.skill_id, skill.name);
         hideInput();
       } catch (error) {
@@ -84,7 +82,7 @@
       timer = setTimeout(async () => {
         searchController = new AbortController();
         try {
-          const url = "/projects/skills/?q=" + encodeURIComponent(query);
+          const url = container.dataset.searchUrl + "?q=" + encodeURIComponent(query);
           const response = await fetch(url, {
             signal: searchController.signal,
           });
@@ -134,7 +132,7 @@
       const chip = button.closest(".skill-chip");
       button.disabled = true;
       try {
-        await window.postJSON(baseUrl + chip.dataset.id + "/remove/");
+        await window.postJSON(container.dataset.removeUrl.replace("/0/", `/${chip.dataset.id}/`));
         chip.remove();
         if (!container.querySelector(".skill-chip")) {
           const empty = document.createElement("span");

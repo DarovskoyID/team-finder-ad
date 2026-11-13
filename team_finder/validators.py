@@ -22,13 +22,14 @@ def validate_github_url(value):
 def normalize_phone(value):
     if not value:
         return None
+    return "+7" + value[-10:]
+
+
+def validate_phone(value):
+    if not value:
+        return
     if not re.fullmatch(r"(?:8|\+7)[0-9]{10}", value):
         raise ValidationError(
             "Номер должен быть в формате 8XXXXXXXXXX "
             "или +7XXXXXXXXXX."
         )
-    return "+7" + value[-10:]
-
-
-def validate_phone(value):
-    normalize_phone(value)
